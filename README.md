@@ -98,6 +98,10 @@ Every node inherits `sim_mode` from `ExdNode` (`exd_common/base_node.py`).
 - lidar → scan of a 10 m × 6 m room, following the simulated drone pose
 - flight → point-mass drone that obeys arm / takeoff / setpoint / land
 
+This built-in sim is only a lightweight stand-in for quick laptop work and CI.
+The project's full simulator is **Gazebo** (with PX4/ArduPilot SITL), used to test
+the real flight stack and the whole mission before flying.
+
 Replace the fake part with real hardware **inside your own package**. As long as
 you publish the same topics with the same message types, nobody else has to change
 anything.

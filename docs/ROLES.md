@@ -21,7 +21,7 @@ Common to everyone:
 | M1 | Real camera streaming on `/exd/camera/image_raw` on laptop and Jetson; view in `rqt_image_view` |
 | M2 | Camera calibrated; real intrinsics in `CameraInfo`; camera TF measured on the airframe |
 | M3 | Detector for the agreed targets (e.g. exit sign / ArUco / person) publishing `DetectionArray` |
-| M4 | Runs in real time on the Jetson (TensorRT / Isaac ROS); 3D position of targets if needed |
+| M4 | Runs in real time on the Jetson (TensorRT); tested on the Gazebo camera; 3D position of targets if needed |
 
 Questions to answer early: which camera (USB, CSI, depth)? what must the drone recognise?
 

@@ -7,8 +7,8 @@ Right now it runs a toy detector (finds the white square in the sim image).
 
 TODO(camera):
   * decide what the drone must see (exit sign? ArUco markers? people? doors?)
-  * replace `detect()` with a real model; on the Jetson use TensorRT / DeepStream
-    or Isaac ROS for speed
+  * replace `detect()` with a real model; on the Jetson use TensorRT for speed
+  * test it on the simulated camera in Gazebo before the real drone
   * fill in Detection.position (3D) using depth or the LiDAR, if needed
 """
 import numpy as np

@@ -48,9 +48,13 @@ class ExdNode(Node):
     def set_status(self, level: int, text: str) -> None:
         """Update what this node reports in its heartbeat. Logs when the level changes."""
         if level != self._hb_level:
-            log = {Heartbeat.OK: self.get_logger().info,
-                   Heartbeat.WARN: self.get_logger().warn}.get(level, self.get_logger().error)
-            log(f'status: {text}')
+            # rclpy needs a separate call site per severity
+            if level == Heartbeat.OK:
+                self.get_logger().info(f'status OK: {text}')
+            elif level == Heartbeat.WARN:
+                self.get_logger().warn(f'status WARN: {text}')
+            else:
+                self.get_logger().error(f'status ERROR: {text}')
         self._hb_level = level
         self._hb_text = text
 

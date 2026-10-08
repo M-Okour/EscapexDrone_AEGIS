@@ -1,0 +1,8 @@
+# Flight control parameters. Owned by the Flight Control student.
+/**/flight_interface_node:
+  ros__parameters:
+    backend: mavros          # used only when sim_mode is false
+    rate_hz: 20.0
+    setpoint_timeout: 1.0    # seconds without a setpoint before HOLD
+    sim_max_speed: 1.0       # m/s horizontal (sim backend)
+    sim_max_climb: 0.8       # m/s vertical (sim backend)

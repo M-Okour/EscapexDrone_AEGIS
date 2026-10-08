@@ -1,0 +1,14 @@
+# LiDAR subsystem parameters. Owned by the LiDAR student.
+/**/lidar_node:
+  ros__parameters:
+    rate_hz: 10.0
+    frame_id: lidar_link
+    sim_room_half_x: 5.0   # simulated room is 10 m x 6 m around the origin
+    sim_room_half_y: 3.0
+    sim_noise: 0.01
+
+/**/obstacle_node:
+  ros__parameters:
+    sectors: 8
+    min_range: 0.2         # ignore points closer than this (the drone itself)
+    max_range: 10.0

@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>exd_camera</name>
+  <version>0.1.0</version>
+  <description>Camera subsystem: camera driver and object detection.</description>
+  <!-- TODO(owner): put the student who owns this package here -->
+  <maintainer email="okour86@hotmail.com">M. Okour</maintainer>
+  <license>TODO: License declaration</license>
+
+  <depend>rclpy</depend>
+  <depend>sensor_msgs</depend>
+  <depend>exd_interfaces</depend>
+  <depend>exd_common</depend>
+  <depend>python3-numpy</depend>
+
+  <test_depend>python3-pytest</test_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>

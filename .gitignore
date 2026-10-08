@@ -1,0 +1,22 @@
+# colcon workspace output
+build/
+install/
+log/
+
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
+
+# editors / OS
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# data
+*.bag
+*.db3
+*.mcap
+rosbag2_*/

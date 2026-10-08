@@ -1,0 +1,13 @@
+# Camera subsystem parameters. Owned by the Camera student.
+# "/**" means "applies to these nodes in any namespace".
+/**/camera_node:
+  ros__parameters:
+    device: "0"        # "0" = /dev/video0, or a GStreamer pipeline for a CSI camera
+    width: 640
+    height: 480
+    fps: 15.0
+    frame_id: camera_link
+
+/**/detector_node:
+  ros__parameters:
+    process_every_n: 3

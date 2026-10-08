@@ -1,0 +1,20 @@
+# Who must review what. GitHub requests these reviewers automatically on PRs.
+# TODO: replace @M-Okour below with each student's GitHub username once assigned,
+# e.g.  /src/exd_camera/   @student-camera
+
+*                          @M-Okour
+
+# Shared contract: supervisor (add all students here too)
+/src/exd_interfaces/       @M-Okour
+/src/exd_common/           @M-Okour
+/docs/ARCHITECTURE.md      @M-Okour
+
+# Subsystems (one student each)
+/src/exd_camera/           @M-Okour
+/src/exd_lidar/            @M-Okour
+/src/exd_flight_control/   @M-Okour
+/src/exd_mission/          @M-Okour
+/src/exd_system/           @M-Okour
+/src/exd_bringup/          @M-Okour
+/docker/                   @M-Okour
+/.github/                  @M-Okour

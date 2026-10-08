@@ -1,0 +1,9 @@
+# System / Jetson parameters. Owned by the Jetson student.
+/**/system_monitor_node:
+  ros__parameters:
+    # nodes that MUST be running; reported as ERROR if never seen
+    expected_nodes: [camera_node, detector_node, lidar_node, obstacle_node,
+                     flight_interface_node, mission_node]
+    stale_after: 3.0        # s without heartbeat -> STALE
+    temp_warn_c: 80.0
+    mem_warn_percent: 90.0

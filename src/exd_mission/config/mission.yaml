@@ -1,0 +1,16 @@
+# Mission parameters. Owned by the Mission student.
+/**/mission_node:
+  ros__parameters:
+    auto_start: false             # true = start as soon as flight control is up (sim demos)
+    takeoff_altitude: 1.5         # m
+    waypoint_tolerance: 0.3       # m
+    obstacle_stop_distance: 0.6   # m, HOLD if anything is closer
+    obstacle_timeout: 1.0         # s, HOLD if LiDAR data is older than this
+    rate_hz: 5.0
+    # flat list of x, y, z triples in the map frame (metres).
+    # The sim room is 10 m x 6 m centred on the origin.
+    # Always write decimals (2.0, not 2) or ROS will reject the parameter type.
+    waypoints: [2.0, 0.0, 1.5,
+                2.0, 2.0, 1.5,
+                0.0, 2.0, 1.5,
+                0.0, 0.0, 1.5]

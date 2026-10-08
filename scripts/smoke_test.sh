@@ -47,4 +47,10 @@ done
 echo "SMOKE TEST FAILED (last state: ${state:-<none>})"
 echo "----- launch log -----"
 cat "$LOG"
+if [[ -n "${GITHUB_ACTIONS:-}" ]]; then
+  # Surface the important lines as an annotation on the PR / run page.
+  summary=$(grep -E 'ERROR|Error|Traceback|rror:|died|status:' "$LOG" | tail -40 \
+            | sed -e 's/%/%25/g' | awk '{printf "%s%%0A", $0}')
+  echo "::error title=Smoke test failed (last state: ${state:-none})::${summary}"
+fi
 exit 1

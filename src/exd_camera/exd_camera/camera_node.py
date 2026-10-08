@@ -12,6 +12,7 @@ TODO(camera):
   * consider replacing this node with the vendor's ROS 2 driver and remapping
     its topics onto topics.CAMERA_IMAGE / CAMERA_INFO
 """
+import array
 import time
 
 import numpy as np
@@ -92,7 +93,8 @@ class CameraNode(ExdNode):
         img.height, img.width = frame.shape[:2]
         img.encoding = 'bgr8'
         img.step = img.width * 3
-        img.data = np.ascontiguousarray(frame).tobytes()
+        # array.array skips rclpy's slow per-byte validation of uint8[] fields
+        img.data = array.array('B', np.ascontiguousarray(frame).tobytes())
         self.image_pub.publish(img)
 
         info = CameraInfo()

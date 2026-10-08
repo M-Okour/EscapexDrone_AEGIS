@@ -63,7 +63,7 @@ class SystemMonitorNode(ExdNode):
                     st.level, st.message = DiagnosticStatus.STALE, f'no heartbeat for {age:.0f}s'
                 else:
                     st.level, st.message = LEVELS.get(hb.level, DiagnosticStatus.ERROR), hb.message
-            if st.level != DiagnosticStatus.OK:
+            if st.level != DiagnosticStatus.OK and name != self.get_name():
                 problems.append(name)
             arr.status.append(st)
 

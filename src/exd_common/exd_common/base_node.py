@@ -46,8 +46,8 @@ class ExdNode(Node):
             f'[{subsystem}] {node_name} starting ({"SIM" if self.sim_mode else "HARDWARE"} mode)')
 
     def set_status(self, level: int, text: str) -> None:
-        """Update what this node reports in its heartbeat. Logs on change."""
-        if level != self._hb_level or text != self._hb_text:
+        """Update what this node reports in its heartbeat. Logs when the level changes."""
+        if level != self._hb_level:
             log = {Heartbeat.OK: self.get_logger().info,
                    Heartbeat.WARN: self.get_logger().warn}.get(level, self.get_logger().error)
             log(f'status: {text}')

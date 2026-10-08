@@ -45,12 +45,22 @@ while (( $(date +%s) - start < TIMEOUT )); do
 done
 
 echo "SMOKE TEST FAILED (last state: ${state:-<none>})"
+DIAG=$(mktemp)
+{
+  echo "mission $(grep -E '^detail:' "$MSG")"
+  timeout 5 ros2 topic echo --once /exd/lidar/obstacles </dev/null 2>/dev/null \
+    | grep -E 'min_distance|frame_id' | sed 's/^/obstacles /'
+  timeout 5 ros2 topic echo --once /exd/system/health </dev/null 2>/dev/null \
+    | grep -E '^  (name|message):' | paste -d' ' - - | sed 's/^/health /'
+  grep -E 'ERROR|Error|Traceback|rror:|died|WARN' "$LOG" | tail -25
+} >"$DIAG" 2>&1
+echo "----- diagnostics -----"
+cat "$DIAG"
 echo "----- launch log -----"
 cat "$LOG"
 if [[ -n "${GITHUB_ACTIONS:-}" ]]; then
   # Surface the important lines as an annotation on the PR / run page.
-  summary=$(grep -E 'ERROR|Error|Traceback|rror:|died|status:' "$LOG" | tail -40 \
-            | sed -e 's/%/%25/g' | awk '{printf "%s%%0A", $0}')
+  summary=$(cut -c1-200 "$DIAG" | sed -e 's/%/%25/g' | awk '{printf "%s%%0A", $0}')
   echo "::error title=Smoke test failed (last state: ${state:-none})::${summary}"
 fi
 exit 1

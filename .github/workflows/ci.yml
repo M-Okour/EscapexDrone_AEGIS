@@ -7,6 +7,7 @@ on:
 jobs:
   ros2-humble:
     runs-on: ubuntu-22.04
+    timeout-minutes: 20
     container: ros:humble-ros-base
     defaults:
       run:
@@ -32,6 +33,7 @@ jobs:
           colcon test-result --verbose
 
       - name: Smoke test (full stack in simulation)
+        timeout-minutes: 4
         run: |
           source install/setup.bash
           ./scripts/smoke_test.sh

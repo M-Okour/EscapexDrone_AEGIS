@@ -7,17 +7,28 @@ set -uo pipefail
 
 TIMEOUT=${TIMEOUT:-90}
 LOG=$(mktemp)
+MSG=$(mktemp)
+
+# Start the ros2 CLI daemon up front: if the first `ros2 topic echo` spawned it
+# inside $(...), the daemon would keep the pipe open and the script would hang.
+ros2 daemon start >/dev/null 2>&1 || true
 
 ros2 launch exd_bringup exd.launch.py sim:=true auto_start:=true >"$LOG" 2>&1 &
 LAUNCH_PID=$!
-trap 'kill -INT $LAUNCH_PID 2>/dev/null; wait $LAUNCH_PID 2>/dev/null' EXIT
+cleanup() {
+  kill -INT $LAUNCH_PID 2>/dev/null
+  for _ in $(seq 1 20); do kill -0 $LAUNCH_PID 2>/dev/null || break; sleep 0.5; done
+  kill -KILL $LAUNCH_PID 2>/dev/null
+  ros2 daemon stop >/dev/null 2>&1 || true
+}
+trap cleanup EXIT
 
 echo "waiting up to ${TIMEOUT}s for mission to finish..."
 start=$(date +%s)
 state=""
 while (( $(date +%s) - start < TIMEOUT )); do
-  state=$(timeout 5 ros2 topic echo --once /exd/mission/status 2>/dev/null \
-          | awk '/^state:/ {print $2}' | tr -d "'\"")
+  timeout 5 ros2 topic echo --once /exd/mission/status >"$MSG" 2>/dev/null </dev/null || true
+  state=$(awk '/^state:/ {print $2}' "$MSG" | tr -d "'\"")
   echo "  [$(( $(date +%s) - start ))s] mission state: ${state:-<none>}"
   if [[ "$state" == "DONE" ]]; then
     echo "SMOKE TEST PASSED"

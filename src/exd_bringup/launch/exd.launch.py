@@ -9,11 +9,18 @@ Examples
 
   On the real drone:
       ros2 launch exd_bringup exd.launch.py sim:=false
+
+  Hardware mode also starts the vendor sensor drivers (Jetson only, install with
+  `sudo apt install ros-jazzy-realsense2-camera ros-jazzy-rplidar-ros`):
+      camera -> realsense2_camera (Intel RealSense D455)
+      lidar  -> rplidar_ros       (Slamtec RPLIDAR A2M12 on lidar_port)
+  Run only the sensors:
+      ros2 launch exd_bringup exd.launch.py sim:=false flight:=false mission:=false
 """
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
 from launch.conditions import IfCondition
-from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
+from launch.substitutions import LaunchConfiguration, PathJoinSubstitution, PythonExpression
 from launch_ros.actions import Node
 from launch_ros.parameter_descriptions import ParameterValue
 from launch_ros.substitutions import FindPackageShare
@@ -34,6 +41,10 @@ def generate_launch_description():
                               description='true = no hardware, every node fakes its data'),
         DeclareLaunchArgument('auto_start', default_value='false',
                               description='start the mission automatically'),
+        DeclareLaunchArgument('lidar_port', default_value='/dev/ttyUSB0',
+                              description='serial port of the RPLIDAR (hardware only)'),
+        DeclareLaunchArgument('lidar_baud', default_value='256000',
+                              description='RPLIDAR baud rate (A2M12 = 256000)'),
     ] + [
         DeclareLaunchArgument(s, default_value='true', description=f'launch the {s} subsystem')
         for s in SUBSYSTEMS
@@ -42,7 +53,47 @@ def generate_launch_description():
     def on(name):
         return IfCondition(LaunchConfiguration(name))
 
-    nodes = [
+    def on_hw(name):
+        """Subsystem enabled AND hardware mode (sim:=false)."""
+        return IfCondition(PythonExpression([
+            "'", LaunchConfiguration(name), "'.lower() == 'true' and '",
+            LaunchConfiguration('sim'), "'.lower() == 'false'"]))
+
+    drivers = [
+        # ---------------- vendor drivers, hardware mode only
+        # RealSense D455 -> /camera/camera/color/*, relayed by camera_node.
+        # Its TF tree hangs off camera_link, which is mounted on base_link below.
+        Node(package='realsense2_camera', executable='realsense2_camera_node',
+             name='camera', namespace='camera',
+             parameters=[{
+                 'camera_name': 'camera',
+                 # reset the D455 on start: recovers it if a previous driver left it
+                 # stuck ("Frames didn't arrive within 5 seconds")
+                 'initial_reset': True,
+                 'enable_color': True,
+                 'enable_depth': True,
+                 'rgb_camera.color_profile': '640,480,15',
+                 'depth_module.depth_profile': '640,480,15',
+                 'pointcloud.enable': False,
+                 'align_depth.enable': False,
+             }],
+             condition=on_hw('camera'), output='screen'),
+        # RPLIDAR A2M12 -> /exd/lidar/scan, converted by lidar_node.
+        # angle_compensate must stay false: the apt driver (SDK 1.12) crashes
+        # with it on in the A2M12's Sensitivity mode.
+        Node(package='rplidar_ros', executable='rplidar_composition', name='rplidar_node',
+             parameters=[{
+                 'serial_port': LaunchConfiguration('lidar_port'),
+                 'serial_baudrate': ParameterValue(LaunchConfiguration('lidar_baud'),
+                                                   value_type=int),
+                 'frame_id': 'lidar_link',
+                 'angle_compensate': False,
+             }],
+             remappings=[('scan', '/exd/lidar/scan')],
+             condition=on_hw('lidar'), output='screen'),
+    ]
+
+    nodes = drivers + [
         # ---------------- camera
         Node(package='exd_camera', executable='camera_node', name='camera_node',
              parameters=[config('exd_camera', 'camera.yaml'), common],

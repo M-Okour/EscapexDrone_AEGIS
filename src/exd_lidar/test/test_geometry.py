@@ -29,3 +29,26 @@ def test_nearest_per_sector_filters_range():
 
 def test_empty_cloud():
     assert nearest_per_sector(np.zeros((0, 3))) == []
+
+
+def test_scan_to_points_drops_invalid_and_places_points():
+    from exd_lidar.geometry import scan_to_points
+    ranges = [1.0, float('inf'), 2.0, 0.05, float('nan'), 30.0]
+    pts = scan_to_points(ranges, angle_min=0.0, angle_increment=math.pi / 2,
+                         range_min=0.15, range_max=16.0)
+    assert pts.shape == (2, 3)
+    assert np.allclose(pts[0], [1.0, 0.0, 0.0], atol=1e-6)     # 0 rad
+    assert np.allclose(pts[1], [-2.0, 0.0, 0.0], atol=1e-6)    # pi rad
+
+
+def test_scan_to_points_feeds_obstacles():
+    from exd_lidar.geometry import scan_to_points
+    ranges = [3.0] * 360
+    ranges[90] = 0.8
+    pts = scan_to_points(ranges, -math.pi, 2 * math.pi / 360, 0.15, 16.0)
+    assert math.isclose(nearest_per_sector(pts)[0][3], 0.8, abs_tol=1e-5)
+
+
+def test_scan_to_points_empty():
+    from exd_lidar.geometry import scan_to_points
+    assert scan_to_points([], 0.0, 0.1, 0.1, 10.0).shape == (0, 3)

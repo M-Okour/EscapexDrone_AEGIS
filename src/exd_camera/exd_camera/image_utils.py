@@ -33,3 +33,26 @@ def find_bright_square(img: np.ndarray, threshold: int = 250):
     rows = np.where(mask.any(axis=1))[0]
     cols = np.where(mask.any(axis=0))[0]
     return int(cols[0]), int(rows[0]), int(cols[-1] - cols[0] + 1), int(rows[-1] - rows[0] + 1)
+
+
+def to_bgr8(data, width: int, height: int, step: int, encoding: str) -> np.ndarray:
+    """Turn the raw bytes of a sensor_msgs/Image into a BGR uint8 (H, W, 3) array.
+
+    Handles the encodings colour cameras usually send (bgr8, rgb8, bgra8, rgba8)
+    and row padding (step > width * channels). Raises ValueError otherwise.
+    Used to feed images from vendor drivers (e.g. RealSense sends rgb8) into
+    the rest of the stack, which expects bgr8.
+    """
+    channels = {'bgr8': 3, 'rgb8': 3, 'bgra8': 4, 'rgba8': 4}.get(encoding)
+    if channels is None:
+        raise ValueError(f'unsupported encoding {encoding!r}')
+    # rclpy gives Image.data as array.array('B'), which supports the buffer protocol
+    buf = (np.asarray(data, dtype=np.uint8) if isinstance(data, list)
+           else np.frombuffer(data, dtype=np.uint8))
+    if buf.size < step * height or step < width * channels:
+        raise ValueError('image buffer smaller than width/height/step')
+    rows = buf[:step * height].reshape(height, step)[:, :width * channels]
+    img = rows.reshape(height, width, channels)[..., :3]
+    if encoding.startswith('rgb'):
+        img = img[..., ::-1]
+    return np.ascontiguousarray(img)

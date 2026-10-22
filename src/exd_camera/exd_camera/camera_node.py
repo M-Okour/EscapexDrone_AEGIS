@@ -4,13 +4,19 @@ Publishes:  /exd/camera/image_raw   (sensor_msgs/Image, bgr8)
             /exd/camera/camera_info (sensor_msgs/CameraInfo)
 
 sim_mode:=true  -> synthetic test pattern (no hardware needed)
-sim_mode:=false -> OpenCV VideoCapture on `device` (USB / CSI via GStreamer string)
+sim_mode:=false, input_topic set (default, see config/camera.yaml)
+                -> relay a vendor ROS 2 driver: the Intel RealSense D455 driver
+                   (realsense2_camera, started by exd_bringup) publishes the
+                   colour stream; this node converts it to bgr8 and republishes
+                   it on the /exd/camera/* topics, keeping the heartbeat alive.
+sim_mode:=false, input_topic ''
+                -> OpenCV VideoCapture on `device` (USB / CSI via GStreamer string)
 
 TODO(camera):
-  * pick the real camera (USB, CSI, RealSense, ZED ...) and its driver
-  * calibrate it and load real intrinsics into CameraInfo
-  * consider replacing this node with the vendor's ROS 2 driver and remapping
-    its topics onto topics.CAMERA_IMAGE / CAMERA_INFO
+  * calibrate the camera (or trust the RealSense factory intrinsics, which
+    are already in the relayed CameraInfo)
+  * use the depth stream (/camera/camera/depth/image_rect_raw) to give
+    detections a 3D position
 """
 import array
 import time
@@ -21,7 +27,7 @@ from sensor_msgs.msg import CameraInfo, Image
 
 from exd_common import topics
 from exd_common.base_node import ExdNode, run_node
-from exd_camera.image_utils import make_test_pattern
+from exd_camera.image_utils import make_test_pattern, to_bgr8
 
 
 class CameraNode(ExdNode):
@@ -33,6 +39,10 @@ class CameraNode(ExdNode):
         self.declare_parameter('height', 480)
         self.declare_parameter('fps', 15.0)
         self.declare_parameter('frame_id', topics.FRAME_CAMERA)
+        # hardware relay mode: topics of a vendor driver ('' = use OpenCV `device`)
+        self.declare_parameter('input_topic', '')
+        self.declare_parameter('input_info_topic', '')
+        self.declare_parameter('stale_after', 1.0)  # s without input images -> WARN
 
         self.width = int(self.get_parameter('width').value)
         self.height = int(self.get_parameter('height').value)
@@ -43,17 +53,63 @@ class CameraNode(ExdNode):
         self.info_pub = self.create_publisher(CameraInfo, topics.CAMERA_INFO, qos_profile_sensor_data)
 
         self.cap = None
+        self.t0 = time.monotonic()
+        input_topic = str(self.get_parameter('input_topic').value)
+
+        if not self.sim_mode and input_topic:
+            self._start_relay(input_topic, str(self.get_parameter('input_info_topic').value))
+            return
+
         if not self.sim_mode:
             self._open_hardware(str(self.get_parameter('device').value))
-
-        self.t0 = time.monotonic()
         self.timer = self.create_timer(1.0 / fps, self.tick)
         if self.sim_mode:
             self.set_status(self.OK, 'publishing synthetic images')
 
+    # ------------------------------------------------------------ relay mode (RealSense etc.)
+    def _start_relay(self, image_topic: str, info_topic: str) -> None:
+        self.input_topic = image_topic
+        self.last_frame = None          # monotonic time of the last relayed frame
+        self.relayed = 0
+        self.create_subscription(Image, image_topic, self.on_input_image, qos_profile_sensor_data)
+        if info_topic:
+            self.create_subscription(CameraInfo, info_topic, self.info_pub.publish,
+                                     qos_profile_sensor_data)
+        self.create_timer(1.0, self.check_relay)
+        self.set_status(self.WARN, f'waiting for images on {image_topic}')
+
+    def on_input_image(self, msg: Image) -> None:
+        if msg.encoding == 'bgr8':
+            out = msg                   # already in the format the stack expects
+        else:
+            try:
+                frame = to_bgr8(msg.data, msg.width, msg.height, msg.step, msg.encoding)
+            except ValueError as e:
+                self.set_status(self.ERROR, f'{self.input_topic}: {e}')
+                return
+            out = Image()
+            out.header = msg.header     # keep the driver's stamp and optical frame
+            out.height, out.width = frame.shape[:2]
+            out.encoding = 'bgr8'
+            out.step = out.width * 3
+            out.data = array.array('B', frame.tobytes())
+        self.image_pub.publish(out)
+        self.last_frame = time.monotonic()
+        self.relayed += 1
+
+    def check_relay(self) -> None:
+        stale = float(self.get_parameter('stale_after').value)
+        if self.last_frame is None:
+            self.set_status(self.WARN, f'waiting for images on {self.input_topic}')
+        elif time.monotonic() - self.last_frame > stale:
+            self.set_status(self.ERROR, f'no images on {self.input_topic} for > {stale:.0f} s')
+        else:
+            self.set_status(self.OK, f'relaying {self.input_topic} ({self.relayed} frames)')
+
+    # ------------------------------------------------------------ OpenCV / sim mode
     def _open_hardware(self, device: str) -> None:
         try:
-            import cv2  # OpenCV ships with JetPack; on a PC: sudo apt install python3-opencv
+            import cv2  # on Ubuntu: sudo apt install python3-opencv
         except ImportError:
             self.set_status(self.ERROR, 'OpenCV (cv2) not installed')
             return

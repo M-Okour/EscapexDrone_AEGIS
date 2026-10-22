@@ -102,6 +102,20 @@ This built-in sim is only a lightweight stand-in for quick laptop work and CI.
 The project's full simulator is **Gazebo** (with PX4/ArduPilot SITL), used to test
 the real flight stack and the whole mission before flying.
 
+### On the drone (Jetson)
+
+`sim:=false` runs the real hardware. On the Jetson (JetPack 7.2, ROS 2 Jazzy)
+this also starts the RealSense D455 and RPLIDAR A2M12 drivers; the Pixhawk 6X
+is reached over Ethernet through MAVROS:
+
+```bash
+ros2 launch exd_bringup exd.launch.py sim:=false flight:=false mission:=false   # sensors only
+ros2 launch mavros apm.launch fcu_url:=udp://0.0.0.0:14550@                      # flight controller
+```
+
+Setup, wiring, how to test and view each device, and known issues:
+[docs/JETSON.md](docs/JETSON.md).
+
 Replace the fake part with real hardware **inside your own package**. As long as
 you publish the same topics with the same message types, nobody else has to change
 anything.

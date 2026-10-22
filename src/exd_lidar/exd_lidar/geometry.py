@@ -54,3 +54,20 @@ def nearest_per_sector(points: np.ndarray, sectors: int = 8,
         result.append((float(pts[i, 0]), float(pts[i, 1]), float(pts[i, 2]), float(dist[i])))
     result.sort(key=lambda p: p[3])
     return result
+
+
+def scan_to_points(ranges, angle_min: float, angle_increment: float,
+                   range_min: float, range_max: float) -> np.ndarray:
+    """Convert a 2D sensor_msgs/LaserScan into an (N, 3) array of points (z = 0).
+
+    Drops invalid returns (inf / nan / outside [range_min, range_max]), which
+    RPLIDARs report for directions where nothing was hit.
+    """
+    r = np.asarray(ranges, dtype=np.float32)
+    if r.size == 0:
+        return np.zeros((0, 3), dtype=np.float32)
+    angles = angle_min + angle_increment * np.arange(r.size, dtype=np.float32)
+    ok = np.isfinite(r) & (r >= range_min) & (r <= range_max)
+    r, angles = r[ok], angles[ok]
+    return np.stack([r * np.cos(angles), r * np.sin(angles), np.zeros_like(r)],
+                    axis=1).astype(np.float32)

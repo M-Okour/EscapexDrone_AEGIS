@@ -1,6 +1,11 @@
 # LiDAR subsystem parameters. Owned by the LiDAR student.
 /**/lidar_node:
   ros__parameters:
+    # Hardware (sim:=false): LaserScan from the RPLIDAR A2M12 driver
+    # (rplidar_ros, started by exd_bringup), converted to /exd/lidar/points.
+    scan_topic: /exd/lidar/scan
+    stale_after: 1.0
+    # sim settings
     rate_hz: 10.0
     frame_id: lidar_link
     sim_room_half_x: 5.0   # simulated room is 10 m x 6 m around the origin

@@ -2,6 +2,13 @@
 # "/**" means "applies to these nodes in any namespace".
 /**/camera_node:
   ros__parameters:
+    # Hardware (sim:=false): relay the Intel RealSense D455 colour stream.
+    # The realsense2_camera driver is started by exd_bringup. Set input_topic
+    # to "" to use OpenCV on `device` instead (plain USB / CSI camera).
+    input_topic: /camera/camera/color/image_raw
+    input_info_topic: /camera/camera/color/camera_info
+    stale_after: 1.0
+    # OpenCV / sim settings
     device: "0"        # "0" = /dev/video0, or a GStreamer pipeline for a CSI camera
     width: 640
     height: 480

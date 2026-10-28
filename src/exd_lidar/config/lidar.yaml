@@ -17,3 +17,5 @@
     sectors: 8
     min_range: 0.2         # ignore points closer than this (the drone itself)
     max_range: 10.0
+    cluster_tolerance: 0.3
+    cluster_min_points: 3

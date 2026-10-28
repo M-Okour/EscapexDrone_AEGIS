@@ -24,7 +24,7 @@ from std_msgs.msg import Header
 from exd_common import topics
 from exd_common.base_node import ExdNode, run_node
 from exd_interfaces.msg import FlightState
-from exd_lidar.geometry import scan_to_points, simulate_room_scan
+from exd_lidar.geometry import scan_to_points_with_gaps, simulate_room_scan
 
 
 def yaw_from_quaternion(q) -> float:
@@ -62,7 +62,7 @@ class LidarNode(ExdNode):
 
     # ------------------------------------------------------------ hardware
     def on_scan(self, msg: LaserScan):
-        pts = scan_to_points(msg.ranges, msg.angle_min, msg.angle_increment,
+        pts = scan_to_points_with_gaps(msg.ranges, msg.angle_min, msg.angle_increment,
                              msg.range_min, msg.range_max)
         header = Header()
         header.stamp = msg.header.stamp

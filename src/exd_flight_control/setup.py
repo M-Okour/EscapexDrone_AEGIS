@@ -24,6 +24,7 @@ setup(
     entry_points={
         'console_scripts': [
             'flight_interface_node = exd_flight_control.flight_interface_node:main',
+            'flight_control_node = exd_flight_control.flight_control_node:main',
         ],
     },
 )
